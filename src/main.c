@@ -7,6 +7,7 @@
 
 
 #include <SDL2/SDL.h>
+#include "cpu.h"
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -41,6 +42,14 @@ void render() {
     SDL_RenderPresent(renderer);
 }
 
+void debugMemory(CPU *cpu) {
+    printf("A: 0x%02X\n", cpu->a);
+    printf("X: 0x%02X\n", cpu->x);
+    printf("Y: 0x%02X\n", cpu->y);
+    printf("SP: 0x%02X\n", cpu->sp);
+    printf("PC: 0x%04X\n", cpu->pc);
+    printf("Status: 0x%02X\n", cpu->status);
+}
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
@@ -71,11 +80,20 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    CPU cpu;
+    cpu_load_rom(&cpu, "sample.a26"); // Substitua por uma ROM válida
+
+
     // Loop principal
     while (is_running) {
+        // Executa instrução por instrução
+        cpu_step(&cpu); 
+        debugMemory(&cpu);
+
         handle_events();
         render();
-        SDL_Delay(16); // Aproximadamente 60 FPS
+       
+        SDL_Delay(100); // 16 é Aproximadamente 60 FPS
     }
 
     // Liberação de recursos

@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "debug",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/exuz_atari",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "preLaunchTask": "build",
+      "initCommands": [
+        "settings set target.source-map /Volumes/EX/MYEMULS/exuz_atari/src ${workspaceFolder}/src"
+      ],
+      "sourceMap": {},
+      "miDebuggerPath": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-vscode",
+      "logging": {
+        "engineLogging": true,
+        "trace": true,
+        "traceResponse": true
+      }
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Volumes/EX/MYEMULS/exuz_atari/src",
+      "program": "/Volumes/EX/MYEMULS/exuz_atari/src/build/Debug/outDebug",
+      "stopAtEntry": true,
+      "preLaunchTask": "build",
+      "initCommands": [
+        "settings set target.source-map /Volumes/EX/MYEMULS/exuz_atari/src ${workspaceFolder}/src"
+      ],
+      "logging": {
+        "engineLogging": true,
+        "trace": true,
+        "traceResponse": true
+      }
+    }
+  ]
+}

@@ -1,6 +1,10 @@
 CC = clang
-CFLAGS = -Wall -Wextra -std=c11 -O2 -I/opt/homebrew/include/SDL2
-LDFLAGS = -L/opt/homebrew/lib -lSDL2 -framework CoreFoundation
+#normal mode
+# CFLAGS = -Wall -Wextra -std=c11 -O2  $(shell sdl2-config --cflags)
+#debug mode
+CFLAGS = -Wall -Wextra -std=c11 -O0  -g $(shell sdl2-config --cflags)
+
+LDFLAGS = $(shell sdl2-config --libs) -framework CoreFoundation
 
 
 SRC = $(wildcard src/*.c)

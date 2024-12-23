@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build",
+        "type": "shell",
+        "command": "make",
+        "args": ["all"],
+        "options": {
+          "env": {
+            "PATH": "${env:PATH}:/opt/homebrew/bin",
+            "CPATH": "/opt/homebrew/include",
+            "LIBRARY_PATH": "/opt/homebrew/lib"
+          }
+        },
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": ["$gcc"],
+        "detail": "Tarefa para compilar o projeto usando Makefile"
+      },
+      {
+        "label": "clean",
+        "type": "shell",
+        "command": "make",
+        "args": ["clean"],
+        "group": "build",
+        "detail": "Limpa os arquivos gerados durante a compilação"
+      }
+    ]
+  }
+  

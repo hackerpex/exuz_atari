@@ -46,3 +46,23 @@ echo 'export CPATH=/opt/homebrew/include' >> ~/.zshrc
 echo 'export LIBRARY_PATH=/opt/homebrew/lib' >> ~/.zshrc
 source ~/.zshrc
 ``` 
+
+
+# proximos passos
+
+
+Implementar o Processador 6502:
+
+Emular a CPU MOS 6507 (uma versão simplificada do 6502).
+Suporte a instruções básicas e endereçamento.
+Memória e ROM:
+
+Implementar mapeamento de memória e carregamento de ROMs.
+Gráficos (TIA):
+
+Processar os gráficos do Television Interface Adapter (TIA).
+Entrada (Controles):
+
+Emular os joysticks e switches.
+
+Som usando a API de áudio do SDL2 para reproduzir sons.

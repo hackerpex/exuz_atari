@@ -1,4 +1,4 @@
-#sobre
+# sobre
 
 Olá me chamo Rodrigo Camargo e sou um programador que gosta de aprender.
 Como tive uma historia muito legal com os games criei um carinho especial por emuladores.
@@ -19,7 +19,7 @@ Qualquer contribuição ao software deve ser feita de forma a garantir a continu
 
 
 
-#build on a mac with apple silicon
+##  build on a mac with apple silicon
 
 1. Configuração do Ambiente
 Instalar Xcode Command Line Tools:
@@ -52,17 +52,18 @@ source ~/.zshrc
 
 
 Implementar o Processador 6502:
+- [ ] Emular a CPU MOS 6507 (uma versão simplificada do 6502)
+- [ ] Suporte a instruções básicas e endereçamento
 
-Emular a CPU MOS 6507 (uma versão simplificada do 6502).
-Suporte a instruções básicas e endereçamento.
 Memória e ROM:
+  - [ ] Implementar mapeamento de memória
+  - [ ] Carregamento de ROMs
 
-Implementar mapeamento de memória e carregamento de ROMs.
 Gráficos (TIA):
+  - [ ] Processar os gráficos do Television Interface Adapter (TIA)
 
-Processar os gráficos do Television Interface Adapter (TIA).
 Entrada (Controles):
+  - [ ] Emular os joysticks e switches
 
-Emular os joysticks e switches.
-
-Som usando a API de áudio do SDL2 para reproduzir sons.
+Som:
+  - [ ] Usar a API de áudio do SDL2 para reproduzir sons

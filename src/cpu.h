@@ -27,7 +27,6 @@ typedef struct {
 // Memória
 
 // Funções
-void init_cpu_log();
 void cpu_reset(CPU *cpu);
 void cpu_step(CPU *cpu); // Executa uma instrução
 void cpu_load_rom(CPU *cpu, const char *filename);

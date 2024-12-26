@@ -4,32 +4,19 @@
 #include <string.h>
 #include "tia.h"
 #include "riot.h"
+#include "log.h"
 
 uint8_t memory[MEMORY_SIZE];
 
 
-FILE *log_file;
-// Função para inicializar o log
-void init_cpu_log() {
-    log_file = fopen("cpu.log", "w");
-    if (!log_file) {
-        fprintf(stderr, "Erro ao abrir ROM: %s\n", "cpu.log");
-        exit(1);
-    }
-   
-
-}
-
-
-// Função para registrar informações no log
 void log_operation(uint8_t opcode, CPU *cpu) {
-    fprintf(log_file, "Opcode: 0x%02X | A: 0x%02X | X: 0x%02X | Y: 0x%02X | PC: 0x%04X | SP: 0x%02X | Status: 0x%02X\n",
-            opcode, cpu->a, cpu->x, cpu->y, cpu->pc, cpu->sp, cpu->status);
-    fflush(log_file); // Garante que os dados sejam gravados imediatamente
-}
-void log_message(const char *message) {
-    fprintf(log_file, "Message: %s\n",message);            
-    fflush(log_file); // Garante que os dados sejam gravados imediatamente
+
+    char messageBuffer[128]; // Cria um buffer para armazenar a string formatada
+            sprintf(messageBuffer," PC: 0x%04X | Opcode: 0x%02X | A: 0x%02X | X: 0x%02X | Y: 0x%02X | SP: 0x%02X | Status: 0x%02X\n",
+            cpu->pc, opcode, cpu->a, cpu->x, cpu->y,  cpu->sp, cpu->status);
+            log_message(1,messageBuffer);
+
+   
 }
 
 // Reseta a CPU para o estado inicial
@@ -68,11 +55,12 @@ void cpu_step(CPU *cpu) {
     uint8_t opcode = memory[cpu->pc]; // Busca a instrução atual
     // printf("Interpretando instrução:0x%02X .\n", opcode);
     log_operation(opcode, cpu);
+    
 
     cpu->pc++; // Avança para a próxima instrução
     switch (opcode) {
 
-         case 0xA9: // LDA (Load Accumulator - Imediato)
+        case 0xA9: // LDA (Load Accumulator - Imediato)
             cpu->a = memory[cpu->pc++]; // Carrega o valor imediato no acumulador
             cpu->status = (cpu->a == 0) ? (cpu->status | 0x02) : (cpu->status & ~0x02); // Atualiza o flag Z (Zero)
             cpu->status = (cpu->a & 0x80) ? (cpu->status | 0x80) : (cpu->status & ~0x80); // Atualiza o flag N (Negativo)
@@ -192,7 +180,7 @@ void cpu_step(CPU *cpu) {
             cpu->pc = addr;
             char messageBuffer[128]; // Cria um buffer para armazenar a string formatada
             sprintf(messageBuffer, "JSR: Salto para 0x%04X, endereço salvo: 0x%04X", addr, originalAddress);
-            log_message(messageBuffer);
+            log_message(1,messageBuffer);
             }
             break;
         case 0x60: // RTS (Return from Subroutine)
@@ -206,7 +194,7 @@ void cpu_step(CPU *cpu) {
 
             char messageBuffer[128]; // Cria um buffer para armazenar a string formatada
             sprintf(messageBuffer, "JSR: Salto para 0x%04X", addr);
-            log_message(messageBuffer);
+            log_message(1,messageBuffer);
 
         }
             break;        
@@ -327,7 +315,7 @@ void cpu_step(CPU *cpu) {
 
                 char messageBuffer[128]; // Cria um buffer para armazenar a string formatada
                 sprintf(messageBuffer, "OUTRO addr:0x%04X , operando:0x%04X a:0x%04X status:0x%02X, pc:0x%04X, v1:0x%04X, v2:0x%04X", addr, operando,cpu->a,cpu->status,cpu->pc,v1,v2);
-                log_message(messageBuffer);
+                log_message(1,messageBuffer);
 
 
             }

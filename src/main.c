@@ -14,6 +14,7 @@
 #include "state.h"
 #include "memory.h"
 #include <stdio.h>
+#include "log.h"
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
@@ -60,7 +61,7 @@ int main(int argc, char *argv[]) {
     CPU cpu;
     RIOT riot;
     
-    init_cpu_log();
+    init_logs();
 
     cpu_load_rom(&cpu, "sample.a26"); // Substitua por uma ROM válida
     mainLoop(&cpu, &riot);

@@ -4,8 +4,7 @@ CC = clang
 #debug mode
 CFLAGS = -Wall -Wextra -std=c11 -O0  -g $(shell sdl2-config --cflags)
 
-LDFLAGS = $(shell sdl2-config --libs) -framework CoreFoundation
-
+LDFLAGS = $(shell sdl2-config --libs) -lSDL2_ttf -framework CoreFoundation
 
 SRC = $(wildcard src/*.c)
 OBJ = $(SRC:.c=.o)

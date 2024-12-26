@@ -15,19 +15,13 @@
 #include "memory.h"
 #include <stdio.h>
 #include "log.h"
+#include "debug.h"
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
 
 
-void debugMemory(CPU *cpu) {
-    printf("A: 0x%02X\n", cpu->a);
-    printf("X: 0x%02X\n", cpu->x);
-    printf("Y: 0x%02X\n", cpu->y);
-    printf("SP: 0x%02X\n", cpu->sp);
-    printf("PC: 0x%04X\n", cpu->pc);    
-    printf("Status: 0x%02X\n", cpu->status);
-}
+
 
 void mainLoop(CPU *cpu, RIOT *riot) {
     
@@ -44,9 +38,9 @@ void mainLoop(CPU *cpu, RIOT *riot) {
         riot_tick(riot);  // Atualiza o temporizador
 
         tia_update(memory);      // Atualiza os gráficos
-
-        // debugMemory(cpu);
-        SDL_Delay(1);  // Aproximadamente 60 FPS
+        update_debug(cpu,memory);    // Atualiza a janela de depuração
+        
+        SDL_Delay(cpu_delay);  // Aproximadamente 60 FPS
     }
 
     // Finaliza o TIA
@@ -62,8 +56,10 @@ int main(int argc, char *argv[]) {
     RIOT riot;
     
     init_logs();
+    init_debug();
+    randomize_memory();
 
-    cpu_load_rom(&cpu, "sample.a26"); // Substitua por uma ROM válida
+    cpu_load_rom(&cpu, "demo.bin"); // Substitua por uma ROM válida
     mainLoop(&cpu, &riot);
 
     return 0;

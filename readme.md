@@ -35,6 +35,7 @@ Instalar Bibliotecas Necessárias:
 
 ``` 
 brew install sdl2
+brew install sdl2_ttf
 brew install cmake
 ``` 
 

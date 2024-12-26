@@ -21,8 +21,10 @@ typedef struct {
     uint8_t y;      // Registrador Y
     uint8_t sp;     // Ponteiro de pilha
     uint16_t pc;    // Contador de programa
-    uint8_t status; // Registrador de status (flags)
+    uint8_t ps; // Registrador de status (flags)
 } CPU;
+
+
 
 // Memória
 

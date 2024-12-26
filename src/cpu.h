@@ -9,6 +9,8 @@
 #ifndef CPU_H
 #define CPU_H
 
+
+#include "memory.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -23,10 +25,9 @@ typedef struct {
 } CPU;
 
 // Memória
-#define MEMORY_SIZE 0x10000 // 64 KB (MOS 6502, mas o 6507 usa menos)
-extern uint8_t memory[MEMORY_SIZE];
 
 // Funções
+void init_cpu_log();
 void cpu_reset(CPU *cpu);
 void cpu_step(CPU *cpu); // Executa uma instrução
 void cpu_load_rom(CPU *cpu, const char *filename);

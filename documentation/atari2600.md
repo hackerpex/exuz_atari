@@ -14,3 +14,10 @@ Configurar os registradores do TIA.
 Atualizar o framebuffer com base nos valores do TIA.
 Renderizar o conteúdo na tela.
 Repetir o ciclo para manter a execução contínua.
+
+
+Atari 2600 - Mapas de Memória Típicos:
+0x00 - 0x3F: TIA (Television Interface Adapter) - Controla gráficos e som.
+0x40 - 0x7F: RIOT (RAM, I/O e Timer) - Entrada de controles (joysticks, switches).
+0x80 - 0xFF: Espelhamento (Mirroring) ou RAM adicional.
+0x1000 e acima: ROM (Programa principal)

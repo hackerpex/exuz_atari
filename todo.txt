@@ -1,0 +1,14 @@
+estou descrevendo aqui o ponto que parei porque talvez eu demore para voltar ao projeto e não lembre.
+
+tive alguns problemas relacionados ao decompilador para mapear os symbolos, aparentemente alguns endereços são gerados durante o runtime e não consigo ter acesso a eles sem executar o programa. Isto ainda é uma duvida.
+Também separei a memoria rom da memoria principal, não sei de fato se isto é necessário mas me pareceu fazer sentido, tendo em visto que a memoria do console fica no chip da riot e tem apenas 128bytes, imaginei que separar esta memoria pode facilitar alguns controles na tia e na riot.
+
+na sequencia preciso buscar por inconsistencias na interpretação do codigo pela cpu.
+em meus ultimos testes estava depuranto a memoria usando o debugger que criei para comparar os valores com o debbuger do stella(emulador).
+
+pensei sobre a possibilidade de usar um registro das execuçoes podendo ir para frente ou para traz tipo debbuger, seria uma boa forma de encontrar problemas.
+
+
+no geral acredito que já consegui mapear todas as instruções da cpu, também os symbolos e modos.
+
+enfim tenho que ficar um tempo fora, se alguém quiser ajudar no projeto vai ser bem vindo.

@@ -6,7 +6,9 @@
 #include "riot.h"
 #include "log.h"
 
-uint8_t memory[MEMORY_SIZE];
+
+
+
 
 void log_operation(uint8_t opcode, CPU *cpu)
 {
@@ -27,7 +29,7 @@ void cpu_reset(CPU *cpu)
     cpu->ps = 0x34; // program status
 
     // O vetor de RESET (0xFFFC) contém o endereço inicial do PC
-    cpu->pc = memory[0xFFFC] | (memory[0xFFFD] << 8);
+    cpu->pc = rom[0xFFFC] | (rom[0xFFFD] << 8);
 }
 
 // Carrega a ROM na memória
@@ -41,7 +43,7 @@ void cpu_load_rom(CPU *cpu, const char *filename)
         exit(1);
     }
 
-    fread(&memory[0xF000], 1, 0x1000, file); // Carrega a ROM no espaço 0xF000-0xFFFF
+    fread(&rom[0xF000], 1, 0x1000, file); // Carrega a ROM no espaço 0xF000-0xFFFF
     fclose(file);
 
     // Inicializa a CPU
@@ -51,7 +53,7 @@ void cpu_load_rom(CPU *cpu, const char *filename)
 // Simula um ciclo da CPU (execução de uma instrução)
 void cpu_step(CPU *cpu)
 {
-    uint8_t opcode = memory[cpu->pc]; // Busca a instrução atual
+    uint8_t opcode = rom[cpu->pc]; // Busca a instrução atual
     // printf("Interpretando instrução:0x%02X .\n", opcode);
     log_operation(opcode, cpu);
 
@@ -60,15 +62,15 @@ void cpu_step(CPU *cpu)
     {
 
     case 0xA9:                                                                        // LDA (Load Accumulator - Imediato)
-        cpu->a = memory[cpu->pc++];                                                   // Carrega o valor imediato no acumulador
+        cpu->a = rom[cpu->pc++];                                                   // Carrega o valor imediato no acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza o flag Z (Zero)
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza o flag N (Negativo)
         break;
 
     case 0xA5: // LDA (Load Accumulator - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++];                                             // Lê o endereço na página zero
-        cpu->a = memory[addr];                                                        // Carrega o valor no acumulador
+        uint8_t addr = rom[cpu->pc++];                                             // Lê o endereço na página zero
+        cpu->a = rom[addr];                                                        // Carrega o valor no acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
@@ -118,13 +120,13 @@ void cpu_step(CPU *cpu)
         break;
 
     case 0xA2:                                                                        // LDX (Load X Register - Imediato)
-        cpu->x = memory[cpu->pc++];                                                   // Carrega valor imediato para o registrador X
+        cpu->x = rom[cpu->pc++];                                                   // Carrega valor imediato para o registrador X
         cpu->ps = (cpu->x == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->x & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
 
     case 0xA0:                                                                        // LDY (Load Y Register - Imediato)
-        cpu->y = memory[cpu->pc++];                                                   // Carrega valor imediato para o registrador Y
+        cpu->y = rom[cpu->pc++];                                                   // Carrega valor imediato para o registrador Y
         cpu->ps = (cpu->y == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->y & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
@@ -140,21 +142,21 @@ void cpu_step(CPU *cpu)
         break;
 
     case 0x85:                              // STA (Store Accumulator - Zero Page)
-        memory[memory[cpu->pc++]] = cpu->a; // Armazena o valor do acumulador em um endereço de zero page
+        rom[rom[cpu->pc++]] = cpu->a; // Armazena o valor do acumulador em um endereço de zero page
         break;
 
     case 0x86:                              // STX (Store X Register - Zero Page)
-        memory[memory[cpu->pc++]] = cpu->x; // Armazena o valor do registrador X em um endereço de zero page
+        rom[rom[cpu->pc++]] = cpu->x; // Armazena o valor do registrador X em um endereço de zero page
         break;
 
     case 0x95:                                                // STA (Store Accumulator - Zero Page,X)
-        memory[(memory[cpu->pc++] + cpu->x) & 0xFF] = cpu->a; // Armazena o acumulador na memória (endereço zero page + X)
+        rom[(rom[cpu->pc++] + cpu->x) & 0xFF] = cpu->a; // Armazena o acumulador na memória (endereço zero page + X)
         break;
 
     case 0xD0: // BNE (Branch if Not Equal)
         if (!(cpu->ps & 0x02))
         { // Verifica se o flag Z (Zero) está limpo
-            int8_t offset = (int8_t)memory[cpu->pc++];
+            int8_t offset = (int8_t)rom[cpu->pc++];
             cpu->pc += offset; // Salta para o novo endereço
         }
         else
@@ -164,20 +166,20 @@ void cpu_step(CPU *cpu)
         break;
 
     case 0x4C:                                                  // JMP (Jump to Address)
-        cpu->pc = memory[cpu->pc] | (memory[cpu->pc + 1] << 8); // Salta para o endereço especificado
+        cpu->pc = rom[cpu->pc] | (rom[cpu->pc + 1] << 8); // Salta para o endereço especificado
         break;
 
     case 0x20: // JSR (Jump to Subroutine)
     {
 
         cpu->sp--;
-        memory[0x0100 + cpu->sp] = ((cpu->pc + 1) >> 8) & 0xFF; // Byte alto
+        rom[0x0100 + cpu->sp] = ((cpu->pc + 1) >> 8) & 0xFF; // Byte alto
         cpu->sp--;
-        memory[0x0100 + cpu->sp] = (cpu->pc + 1) & 0xFF; // Byte baixo
+        rom[0x0100 + cpu->sp] = (cpu->pc + 1) & 0xFF; // Byte baixo
 
         uint16_t originalAddress = cpu->pc + 1;
 
-        uint16_t addr = memory[cpu->pc] | (memory[cpu->pc + 1] << 8); // Novo endereço para saltar
+        uint16_t addr = rom[cpu->pc] | (rom[cpu->pc + 1] << 8); // Novo endereço para saltar
         cpu->pc = addr;
         char messageBuffer[128]; // Cria um buffer para armazenar a string formatada
         sprintf(messageBuffer, "JSR: Salto para 0x%04X, endereço salvo: 0x%04X", addr, originalAddress);
@@ -187,8 +189,8 @@ void cpu_step(CPU *cpu)
     case 0x60: // RTS (Return from Subroutine)
     {
         // Recupera o endereço salvo na pilha
-        uint16_t low = memory[0x0100 + cpu->sp++];  // Byte baixo
-        uint16_t high = memory[0x0100 + cpu->sp++]; // Byte alto
+        uint16_t low = rom[0x0100 + cpu->sp++];  // Byte baixo
+        uint16_t high = rom[0x0100 + cpu->sp++]; // Byte alto
 
         uint16_t addr = ((high << 8) | low) + 1; // Corrige o endereço (+1 para próxima instrução)
         cpu->pc = addr;                          // Salta para o endereço
@@ -205,7 +207,7 @@ void cpu_step(CPU *cpu)
 
     case 0xE9: // SBC (Subtract with Borrow - Imediato)
     {
-        uint8_t value = memory[cpu->pc++];                                                 // Obtém o valor imediato
+        uint8_t value = rom[cpu->pc++];                                                 // Obtém o valor imediato
         uint16_t temp = cpu->a - value - ((cpu->ps & 0x01) ? 0 : 1);                   // Subtração com carry invertido
         cpu->ps = (temp > 0xFF) ? (cpu->ps & ~0x01) : (cpu->ps | 0x01);        // Atualiza o flag C (Carry)
         cpu->ps = ((temp & 0xFF) == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02); // Atualiza o flag Z (Zero)
@@ -214,7 +216,7 @@ void cpu_step(CPU *cpu)
     }
     break;
     case 0x29:                                                                        // AND (Logical AND - Imediato)
-        cpu->a &= memory[cpu->pc++];                                                  // Faz operação lógica AND entre o acumulador e o valor imediato
+        cpu->a &= rom[cpu->pc++];                                                  // Faz operação lógica AND entre o acumulador e o valor imediato
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza o flag Z (Zero)
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza o flag N (Negativo)
         break;
@@ -223,7 +225,7 @@ void cpu_step(CPU *cpu)
         break;
     case 0x69: // ADC (Add with Carry - Imediato)
     {
-        uint8_t value = memory[cpu->pc++];                                                 // Obtém o valor imediato
+        uint8_t value = rom[cpu->pc++];                                                 // Obtém o valor imediato
         uint16_t temp = cpu->a + value + ((cpu->ps & 0x01) ? 1 : 0);                   // Soma com carry
         cpu->ps = (temp > 0xFF) ? (cpu->ps | 0x01) : (cpu->ps & ~0x01);        // Atualiza o flag C (Carry)
         cpu->ps = ((temp & 0xFF) == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02); // Atualiza o flag Z (Zero)
@@ -234,7 +236,7 @@ void cpu_step(CPU *cpu)
     case 0x10: // BPL (Branch if Positive)
         if (!(cpu->ps & 0x80))
         {                                              // Verifica se o flag N (Negativo) está limpo
-            int8_t offset = (int8_t)memory[cpu->pc++]; // Lê o deslocamento como valor assinado
+            int8_t offset = (int8_t)rom[cpu->pc++]; // Lê o deslocamento como valor assinado
             cpu->pc += offset;                         // Salta para o novo endereço
         }
         else
@@ -243,16 +245,16 @@ void cpu_step(CPU *cpu)
         }
         break;
     case 0x09:                                                                        // ORA (Logical Inclusive OR - Imediato)
-        cpu->a |= memory[cpu->pc++];                                                  // Faz operação lógica OR entre o acumulador e o valor imediato
+        cpu->a |= rom[cpu->pc++];                                                  // Faz operação lógica OR entre o acumulador e o valor imediato
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza o flag Z (Zero)
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza o flag N (Negativo)
         break;
     case 0x94:                                                // STY (Store Y Register - Zero Page,X)
-        memory[(memory[cpu->pc++] + cpu->x) & 0xFF] = cpu->y; // Armazena o valor do registrador Y em um endereço de zero page com deslocamento X
+        rom[(rom[cpu->pc++] + cpu->x) & 0xFF] = cpu->y; // Armazena o valor do registrador Y em um endereço de zero page com deslocamento X
         break;
 
     case 0xB4:                                                                        // LDY (Load Y Register - Zero Page,X)
-        cpu->y = memory[(memory[cpu->pc++] + cpu->x) & 0xFF];                         // Carrega o valor de zero page + X no registrador Y
+        cpu->y = rom[(rom[cpu->pc++] + cpu->x) & 0xFF];                         // Carrega o valor de zero page + X no registrador Y
         cpu->ps = (cpu->y == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->y & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
@@ -269,8 +271,8 @@ void cpu_step(CPU *cpu)
         break;
     case 0xBD: // LDA (Load Accumulator - Absolute,X)
     {
-        uint16_t addr = (memory[cpu->pc++] | (memory[cpu->pc++] << 8)) + cpu->x;      // Calcula o endereço absoluto com deslocamento X
-        cpu->a = memory[addr];                                                        // Carrega o valor no acumulador
+        uint16_t addr = (rom[cpu->pc++] | (rom[cpu->pc++] << 8)) + cpu->x;      // Calcula o endereço absoluto com deslocamento X
+        cpu->a = rom[addr];                                                        // Carrega o valor no acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
@@ -290,28 +292,28 @@ void cpu_step(CPU *cpu)
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
     case 0xA6:                                                                        // LDX (Load X Register - Zero Page)
-        cpu->x = memory[memory[cpu->pc++]];                                           // Carrega o valor de zero page para o registrador X
+        cpu->x = rom[rom[cpu->pc++]];                                           // Carrega o valor de zero page para o registrador X
         cpu->ps = (cpu->x == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->x & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
-    case 0xE6: // INC (Increment Memory - Zero Page)
+    case 0xE6: // INC (Increment rom - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++];                                                   // Obtém o endereço de zero page
-        memory[addr]++;                                                                     // Incrementa o valor na memória
-        cpu->ps = (memory[addr] == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
-        cpu->ps = (memory[addr] & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
+        uint8_t addr = rom[cpu->pc++];                                                   // Obtém o endereço de zero page
+        rom[addr]++;                                                                     // Incrementa o valor na memória
+        cpu->ps = (rom[addr] == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
+        cpu->ps = (rom[addr] & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
     case 0x2D: // AND (Logical AND - Absolute)
     {
 
-        uint16_t v1 = memory[cpu->pc++]; // Obtém o endereço absoluto
+        uint16_t v1 = rom[cpu->pc++]; // Obtém o endereço absoluto
 
-        uint16_t v2 = memory[cpu->pc++]; // Obtém o endereço absoluto
+        uint16_t v2 = rom[cpu->pc++]; // Obtém o endereço absoluto
 
         uint16_t addr = v1 | v2; // Obtém o endereço absoluto
 
-        uint16_t operando = memory[addr];
+        uint16_t operando = rom[addr];
         cpu->a &= operando;                                                           // Aplica operação lógica AND com o acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
@@ -324,7 +326,7 @@ void cpu_step(CPU *cpu)
     case 0xF0: // BEQ (Branch if Equal)
         if (cpu->ps & 0x02)
         {                                              // Verifica o flag Z (Zero)
-            int8_t offset = (int8_t)memory[cpu->pc++]; // Obtém o deslocamento com sinal
+            int8_t offset = (int8_t)rom[cpu->pc++]; // Obtém o deslocamento com sinal
             cpu->pc += offset;                         // Aplica o deslocamento
         }
         else
@@ -333,19 +335,19 @@ void cpu_step(CPU *cpu)
         }
         break;
     case 0x49:                                                                        // EOR (Exclusive OR - Imediato)
-        cpu->a ^= memory[cpu->pc++];                                                  // Aplica operação XOR entre o acumulador e o operando imediato
+        cpu->a ^= rom[cpu->pc++];                                                  // Aplica operação XOR entre o acumulador e o operando imediato
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
     case 0x8D: // STA (Store Accumulator - Absolute)
     {
-        uint16_t addr = memory[cpu->pc++] | (memory[cpu->pc++] << 8); // Obtém o endereço absoluto
-        memory[addr] = cpu->a;                                        // Armazena o valor do acumulador na memória
+        uint16_t addr = rom[cpu->pc++] | (rom[cpu->pc++] << 8); // Obtém o endereço absoluto
+        rom[addr] = cpu->a;                                        // Armazena o valor do acumulador na memória
     }
     break;
     case 0xE0: // CPX (Compare X Register - Imediato)
     {
-        uint8_t value = memory[cpu->pc++];                                              // Obtém o valor imediato
+        uint8_t value = rom[cpu->pc++];                                              // Obtém o valor imediato
         uint8_t result = cpu->x - value;                                                // Subtrai o valor do registrador X
         cpu->ps = (result == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);     // Atualiza Z
         cpu->ps = (result & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80);   // Atualiza N
@@ -353,17 +355,17 @@ void cpu_step(CPU *cpu)
     }
     break;
     case 0x84:                              // STY (Store Y Register - Zero Page)
-        memory[memory[cpu->pc++]] = cpu->y; // Armazena o valor do registrador Y em um endereço de zero page
+        rom[rom[cpu->pc++]] = cpu->y; // Armazena o valor do registrador Y em um endereço de zero page
         break;
     case 0x25:                                                                        // AND (Logical AND - Zero Page)
-        cpu->a &= memory[memory[cpu->pc++]];                                          // Aplica operação lógica AND com o acumulador e o endereço de zero page
+        cpu->a &= rom[rom[cpu->pc++]];                                          // Aplica operação lógica AND com o acumulador e o endereço de zero page
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
     case 0x30: // BMI (Branch if Minus)
         if (cpu->ps & 0x80)
         {                                              // Verifica se o flag N (Negative) está definido
-            int8_t offset = (int8_t)memory[cpu->pc++]; // Obtém o deslocamento com sinal
+            int8_t offset = (int8_t)rom[cpu->pc++]; // Obtém o deslocamento com sinal
             cpu->pc += offset;                         // Aplica o deslocamento
         }
         else
@@ -372,26 +374,26 @@ void cpu_step(CPU *cpu)
         }
         break;
     case 0x05:                                                                        // ORA (Logical Inclusive OR - Zero Page)
-        cpu->a |= memory[memory[cpu->pc++]];                                          // Aplica operação lógica OR com o acumulador e o endereço de zero page
+        cpu->a |= rom[rom[cpu->pc++]];                                          // Aplica operação lógica OR com o acumulador e o endereço de zero page
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
     case 0xB5:                                                                        // LDA (Load Accumulator - Zero Page,X)
-        cpu->a = memory[(memory[cpu->pc++] + cpu->x) & 0xFF];                         // Carrega o valor de zero page + X no acumulador
+        cpu->a = rom[(rom[cpu->pc++] + cpu->x) & 0xFF];                         // Carrega o valor de zero page + X no acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
     case 0x08:                                           // PHP (Push Processor Status)
-        memory[0x0100 + cpu->sp--] = cpu->ps | 0x10; // Empurra o registrador de status na pilha com o bit 4 definido
+        rom[0x0100 + cpu->sp--] = cpu->ps | 0x10; // Empurra o registrador de status na pilha com o bit 4 definido
         break;
     case 0x28:                                    // PLP (Pull Processor Status)
-        cpu->ps = memory[0x0100 + ++cpu->sp]; // Puxa o registrador de status da pilha
+        cpu->ps = rom[0x0100 + ++cpu->sp]; // Puxa o registrador de status da pilha
         cpu->ps |= 0x20;                      // Garante que o bit 5 esteja sempre definido
         break;
     case 0x90: // BCC (Branch if Carry Clear)
         if (!(cpu->ps & 0x01))
         {                                              // Verifica se o flag C (Carry) está limpo
-            int8_t offset = (int8_t)memory[cpu->pc++]; // Obtém o deslocamento com sinal
+            int8_t offset = (int8_t)rom[cpu->pc++]; // Obtém o deslocamento com sinal
             cpu->pc += offset;                         // Aplica o deslocamento
         }
         else
@@ -401,39 +403,39 @@ void cpu_step(CPU *cpu)
         break;
     case 0x66: // ROR (Rotate Right - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++]; // Obtém o endereço de zero page
-        uint8_t value = memory[addr];
+        uint8_t addr = rom[cpu->pc++]; // Obtém o endereço de zero page
+        uint8_t value = rom[addr];
         uint8_t carry = (cpu->ps & 0x01) << 7;                                   // Salva o carry como bit mais significativo
         cpu->ps = (value & 0x01) ? (cpu->ps | 0x01) : (cpu->ps & ~0x01); // Atualiza o carry
         value = (value >> 1) | carry;                                                // Rotaciona para a direita
-        memory[addr] = value;                                                        // Atualiza o valor na memória
+        rom[addr] = value;                                                        // Atualiza o valor na memória
         cpu->ps = (value == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (value & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
     case 0x26: // ROL (Rotate Left - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++]; // Obtém o endereço de zero page
-        uint8_t value = memory[addr];
+        uint8_t addr = rom[cpu->pc++]; // Obtém o endereço de zero page
+        uint8_t value = rom[addr];
         uint8_t carry = (cpu->ps & 0x01);                                        // Obtém o carry atual
         cpu->ps = (value & 0x80) ? (cpu->ps | 0x01) : (cpu->ps & ~0x01); // Atualiza o carry com o bit 7
         value = (value << 1) | carry;                                                // Rotaciona para a esquerda
-        memory[addr] = value;                                                        // Atualiza o valor na memória
+        rom[addr] = value;                                                        // Atualiza o valor na memória
         cpu->ps = (value == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (value & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
     case 0xB1: // LDA (Load Accumulator - Indirect,Y)
     {
-        uint16_t addr = memory[memory[cpu->pc++]] | (memory[memory[cpu->pc] + 1] << 8); // Obtém o endereço indireto
+        uint16_t addr = rom[rom[cpu->pc++]] | (rom[rom[cpu->pc] + 1] << 8); // Obtém o endereço indireto
         addr += cpu->y;                                                                 // Aplica o deslocamento Y
-        cpu->a = memory[addr];                                                          // Carrega o valor no acumulador
+        cpu->a = rom[addr];                                                          // Carrega o valor no acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);     // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80);   // Atualiza N
     }
     break;
     case 0x45:                                                                        // EOR (Exclusive OR - Zero Page)
-        cpu->a ^= memory[memory[cpu->pc++]];                                          // Aplica operação XOR entre o acumulador e o endereço de zero page
+        cpu->a ^= rom[rom[cpu->pc++]];                                          // Aplica operação XOR entre o acumulador e o endereço de zero page
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         break;
@@ -442,8 +444,8 @@ void cpu_step(CPU *cpu)
         break;
     case 0x75: // ADC (Add with Carry - Zero Page,X)
     {
-        uint8_t addr = (memory[cpu->pc++] + cpu->x) & 0xFF;                           // Endereço na página zero com deslocamento X
-        uint16_t sum = cpu->a + memory[addr] + (cpu->ps & 0x01);                  // Soma incluindo o carry
+        uint8_t addr = (rom[cpu->pc++] + cpu->x) & 0xFF;                           // Endereço na página zero com deslocamento X
+        uint16_t sum = cpu->a + rom[addr] + (cpu->ps & 0x01);                  // Soma incluindo o carry
         cpu->ps = (sum > 0xFF) ? (cpu->ps | 0x01) : (cpu->ps & ~0x01);    // Atualiza o Carry
         cpu->a = (uint8_t)sum;                                                        // Armazena o resultado
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
@@ -453,7 +455,7 @@ void cpu_step(CPU *cpu)
     case 0xB0: // BCS (Branch if Carry Set)
         if (cpu->ps & 0x01)
         {                                              // Verifica se o flag C (Carry) está definido
-            int8_t offset = (int8_t)memory[cpu->pc++]; // Obtém o deslocamento com sinal
+            int8_t offset = (int8_t)rom[cpu->pc++]; // Obtém o deslocamento com sinal
             cpu->pc += offset;                         // Aplica o deslocamento
         }
         else
@@ -463,16 +465,16 @@ void cpu_step(CPU *cpu)
         break;
     case 0xAD: // LDA (Load Accumulator - Absolute)
     {
-        uint16_t addr = memory[cpu->pc++] | (memory[cpu->pc++] << 8);                 // Obtém o endereço absoluto
-        cpu->a = memory[addr];                                                        // Carrega o valor no acumulador
+        uint16_t addr = rom[cpu->pc++] | (rom[cpu->pc++] << 8);                 // Obtém o endereço absoluto
+        cpu->a = rom[addr];                                                        // Carrega o valor no acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
     case 0xE4: // CPX (Compare X Register - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++];                                               // Obtém o endereço de zero page
-        uint8_t value = memory[addr];                                                   // Lê o valor na memória
+        uint8_t addr = rom[cpu->pc++];                                               // Obtém o endereço de zero page
+        uint8_t value = rom[addr];                                                   // Lê o valor na memória
         uint8_t result = cpu->x - value;                                                // Subtrai o valor de X
         cpu->ps = (result == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);     // Atualiza Z
         cpu->ps = (result & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80);   // Atualiza N
@@ -481,15 +483,15 @@ void cpu_step(CPU *cpu)
     break;
     case 0xA4: // LDY (Load Y Register - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++];                                             // Obtém o endereço de zero page
-        cpu->y = memory[addr];                                                        // Carrega o valor no registrador Y
+        uint8_t addr = rom[cpu->pc++];                                             // Obtém o endereço de zero page
+        cpu->y = rom[addr];                                                        // Carrega o valor no registrador Y
         cpu->ps = (cpu->y == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->y & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
     case 0xC0: // CPY (Compare Y Register - Imediato)
     {
-        uint8_t value = memory[cpu->pc++];                                              // Obtém o valor imediato
+        uint8_t value = rom[cpu->pc++];                                              // Obtém o valor imediato
         uint8_t result = cpu->y - value;                                                // Subtrai o valor do registrador Y
         cpu->ps = (result == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);     // Atualiza Z
         cpu->ps = (result & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80);   // Atualiza N
@@ -498,15 +500,15 @@ void cpu_step(CPU *cpu)
     break;
     case 0xB9: // LDA (Load Accumulator - Absolute,Y)
     {
-        uint16_t addr = (memory[cpu->pc++] | (memory[cpu->pc++] << 8)) + cpu->y;      // Calcula o endereço absoluto com deslocamento Y
-        cpu->a = memory[addr];                                                        // Carrega o valor no acumulador
+        uint16_t addr = (rom[cpu->pc++] | (rom[cpu->pc++] << 8)) + cpu->y;      // Calcula o endereço absoluto com deslocamento Y
+        cpu->a = rom[addr];                                                        // Carrega o valor no acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
     case 0xC9: // CMP (Compare Accumulator - Imediato)
     {
-        uint8_t value = memory[cpu->pc++];                                              // Obtém o valor imediato
+        uint8_t value = rom[cpu->pc++];                                              // Obtém o valor imediato
         uint8_t result = cpu->a - value;                                                // Subtrai o valor do acumulador
         cpu->ps = (result == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);     // Atualiza Z
         cpu->ps = (result & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80);   // Atualiza N
@@ -515,41 +517,41 @@ void cpu_step(CPU *cpu)
     break;
     case 0x39: // AND (Logical AND - Absolute,Y)
     {
-        uint16_t addr = (memory[cpu->pc++] | (memory[cpu->pc++] << 8)) + cpu->y;      // Calcula o endereço absoluto com deslocamento Y
-        cpu->a &= memory[addr];                                                       // Aplica operação lógica AND com o acumulador
+        uint16_t addr = (rom[cpu->pc++] | (rom[cpu->pc++] << 8)) + cpu->y;      // Calcula o endereço absoluto com deslocamento Y
+        cpu->a &= rom[addr];                                                       // Aplica operação lógica AND com o acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
-    case 0xC6: // DEC (Decrement Memory - Zero Page)
+    case 0xC6: // DEC (Decrement rom - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++];                                                   // Obtém o endereço de zero page
-        memory[addr]--;                                                                     // Decrementa o valor na memória
-        cpu->ps = (memory[addr] == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
-        cpu->ps = (memory[addr] & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
+        uint8_t addr = rom[cpu->pc++];                                                   // Obtém o endereço de zero page
+        rom[addr]--;                                                                     // Decrementa o valor na memória
+        cpu->ps = (rom[addr] == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
+        cpu->ps = (rom[addr] & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
     case 0x99: // STA (Store Accumulator - Absolute,Y)
     {
-        uint16_t addr = (memory[cpu->pc++] | (memory[cpu->pc++] << 8)) + cpu->y; // Calcula o endereço absoluto com deslocamento Y
-        memory[addr] = cpu->a;                                                   // Armazena o valor do acumulador no endereço calculado
+        uint16_t addr = (rom[cpu->pc++] | (rom[cpu->pc++] << 8)) + cpu->y; // Calcula o endereço absoluto com deslocamento Y
+        rom[addr] = cpu->a;                                                   // Armazena o valor do acumulador no endereço calculado
     }
     break;
-    case 0xF6: // INC (Increment Memory - Zero Page,X)
+    case 0xF6: // INC (Increment rom - Zero Page,X)
     {
-        uint8_t addr = (memory[cpu->pc++] + cpu->x) & 0xFF;                                 // Calcula o endereço na página zero com deslocamento X
-        memory[addr]++;                                                                     // Incrementa o valor na memória
-        cpu->ps = (memory[addr] == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
-        cpu->ps = (memory[addr] & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
+        uint8_t addr = (rom[cpu->pc++] + cpu->x) & 0xFF;                                 // Calcula o endereço na página zero com deslocamento X
+        rom[addr]++;                                                                     // Incrementa o valor na memória
+        cpu->ps = (rom[addr] == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
+        cpu->ps = (rom[addr] & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
     }
     break;
     case 0x07: // SLO (Shift Left and OR with Accumulator - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++]; // Obtém o endereço de zero page
-        uint8_t value = memory[addr];
+        uint8_t addr = rom[cpu->pc++]; // Obtém o endereço de zero page
+        uint8_t value = rom[addr];
         cpu->ps = (value & 0x80) ? (cpu->ps | 0x01) : (cpu->ps & ~0x01);  // Atualiza o Carry
         value <<= 1;                                                                  // Desloca o valor para a esquerda
-        memory[addr] = value;                                                         // Atualiza o valor na memória
+        rom[addr] = value;                                                         // Atualiza o valor na memória
         cpu->a |= value;                                                              // OR lógico com o acumulador
         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02);   // Atualiza Z
         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
@@ -560,16 +562,16 @@ void cpu_step(CPU *cpu)
         break;
     case 0x40: // RTI (Return from Interrupt)
     {
-        cpu->ps = memory[0x0100 + ++cpu->sp];   // Restaura o status da pilha
-        uint16_t low = memory[0x0100 + ++cpu->sp];  // Recupera o byte baixo do endereço da pilha
-        uint16_t high = memory[0x0100 + ++cpu->sp]; // Recupera o byte alto
+        cpu->ps = rom[0x0100 + ++cpu->sp];   // Restaura o status da pilha
+        uint16_t low = rom[0x0100 + ++cpu->sp];  // Recupera o byte baixo do endereço da pilha
+        uint16_t high = rom[0x0100 + ++cpu->sp]; // Recupera o byte alto
         cpu->pc = (high << 8) | low;                // Reconstrói o endereço
     }
     break;
     case 0xF9: // SBC (Subtract with Carry - Absolute,Y)
     {
-        uint16_t addr = (memory[cpu->pc++] | (memory[cpu->pc++] << 8)) + cpu->y;      // Calcula o endereço absoluto com deslocamento Y
-        uint8_t value = memory[addr] ^ 0xFF;                                          // Complementa o valor (para subtração)
+        uint16_t addr = (rom[cpu->pc++] | (rom[cpu->pc++] << 8)) + cpu->y;      // Calcula o endereço absoluto com deslocamento Y
+        uint8_t value = rom[addr] ^ 0xFF;                                          // Complementa o valor (para subtração)
         uint16_t result = cpu->a + value + (cpu->ps & 0x01);                      // Soma o complemento e o carry
         cpu->ps = (result > 0xFF) ? (cpu->ps | 0x01) : (cpu->ps & ~0x01); // Atualiza C
         cpu->a = result & 0xFF;                                                       // Atualiza o acumulador
@@ -589,8 +591,8 @@ void cpu_step(CPU *cpu)
     break;
     case 0x24: // BIT (Bit Test - Zero Page)
     {
-        uint8_t addr = memory[cpu->pc++];                                              // Obtém o endereço de zero page
-        uint8_t value = memory[addr];                                                  // Lê o valor na memória
+        uint8_t addr = rom[cpu->pc++];                                              // Obtém o endereço de zero page
+        uint8_t value = rom[addr];                                                  // Lê o valor na memória
         cpu->ps = (value & cpu->a) ? (cpu->ps & ~0x02) : (cpu->ps | 0x02); // Atualiza Z
         cpu->ps = (value & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80);   // Atualiza N
         cpu->ps = (value & 0x40) ? (cpu->ps | 0x40) : (cpu->ps & ~0x40);   // Atualiza V
@@ -599,7 +601,7 @@ void cpu_step(CPU *cpu)
     case 0x50: // BVC (Branch if Overflow Clear)
         if (!(cpu->ps & 0x40))
         {                                              // Verifica se o flag V (Overflow) está limpo
-            int8_t offset = (int8_t)memory[cpu->pc++]; // Obtém o deslocamento com sinal
+            int8_t offset = (int8_t)rom[cpu->pc++]; // Obtém o deslocamento com sinal
             cpu->pc += offset;                         // Aplica o deslocamento
         }
         else
@@ -610,10 +612,10 @@ void cpu_step(CPU *cpu)
         case 0x2C: // BIT (Absolute)
         {
             // Obtém o endereço absoluto
-            uint16_t addr = memory[cpu->pc++] | (memory[cpu->pc++] << 8);
+            uint16_t addr = rom[cpu->pc++] | (rom[cpu->pc++] << 8);
 
             // Lê o valor da memória no endereço calculado
-            uint8_t value = memory[addr];
+            uint8_t value = rom[addr];
 
             // Atualiza as flags:
             cpu->ps = (value & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Flag Negative (N)
@@ -623,13 +625,13 @@ void cpu_step(CPU *cpu)
         break;        
         case 0x48: // PHA (Push Accumulator)
         {
-            memory[0x0100 + cpu->sp--] = cpu->a; // Empilha o valor do acumulador na stack
+            rom[0x0100 + cpu->sp--] = cpu->a; // Empilha o valor do acumulador na stack
         }
         break;
 
         case 0x68: // PLA (Pull Accumulator)
         {
-            cpu->a = memory[0x0100 + ++cpu->sp]; // Puxa o valor do acumulador da stack
+            cpu->a = rom[0x0100 + ++cpu->sp]; // Puxa o valor do acumulador da stack
 
             // Atualiza as flags Z e N com base no valor carregado
             cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02); // Z flag
@@ -638,9 +640,9 @@ void cpu_step(CPU *cpu)
         break;        
         // case 0x01: // ORA (Logical Inclusive OR - Indirect,X)
         //     {
-        //         uint8_t zp_addr = (memory[cpu->pc++] + cpu->x) & 0xFF; // Endereço zero page com deslocamento X
-        //         uint16_t addr = memory[zp_addr] | (memory[(zp_addr + 1) & 0xFF] << 8); // Endereço indireto
-        //         cpu->a |= memory[addr]; // Operação lógica OR com o acumulador
+        //         uint8_t zp_addr = (rom[cpu->pc++] + cpu->x) & 0xFF; // Endereço zero page com deslocamento X
+        //         uint16_t addr = rom[zp_addr] | (rom[(zp_addr + 1) & 0xFF] << 8); // Endereço indireto
+        //         cpu->a |= rom[addr]; // Operação lógica OR com o acumulador
         //         cpu->ps = (cpu->a == 0) ? (cpu->ps | 0x02) : (cpu->ps & ~0x02); // Atualiza Z
         //         cpu->ps = (cpu->a & 0x80) ? (cpu->ps | 0x80) : (cpu->ps & ~0x80); // Atualiza N
         //     }

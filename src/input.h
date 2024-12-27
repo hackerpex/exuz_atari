@@ -11,7 +11,7 @@
 void input_init();
 
 // Atualiza os inputs
-void input_update(bool *is_running);
+void input_update(bool *is_running, uint8_t *memory);
 
 // Lê o estado de um endereço mapeado
 uint8_t input_read(uint16_t addr);

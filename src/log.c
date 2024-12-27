@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "log.h"
 
 FILE *cpu_log_file;
 FILE *memory_log_file;

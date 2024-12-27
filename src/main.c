@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include "log.h"
 #include "debug.h"
+#include "decompiler.h"
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 
@@ -26,18 +27,18 @@
 void mainLoop(CPU *cpu, RIOT *riot) {
     
 
-    riot_init(riot);
+   riot_init(riot);
     tia_init();
    
 
     // Loop principal
     while (is_running) {
-        input_update(&is_running); // Atualiza o estado dos inputs
+        input_update(&is_running, memory); // Atualiza o estado dos inputs
         // handle_events();
         cpu_step(cpu); // Executa instrução por instrução
         riot_tick(riot);  // Atualiza o temporizador
 
-        tia_update(memory);      // Atualiza os gráficos
+        tia_update(rom);      // Atualiza os gráficos
         update_debug(cpu,memory);    // Atualiza a janela de depuração
         
         SDL_Delay(cpu_delay);  // Aproximadamente 60 FPS
@@ -55,11 +56,17 @@ int main(int argc, char *argv[]) {
     CPU cpu;
     RIOT riot;
     
+
     init_logs();
     init_debug();
-    randomize_memory();
 
-    cpu_load_rom(&cpu, "demo.bin"); // Substitua por uma ROM válida
+   cpu_load_rom(&cpu, "demo.bin"); // Substitua por uma ROM válida
+   
+   
+   //decompile(rom);
+
+    randomize_memory( memory);
+
     mainLoop(&cpu, &riot);
 
     return 0;

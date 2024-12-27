@@ -21,11 +21,11 @@
 
 // Funções do TIA
 void tia_init();
-void tia_update(uint8_t *memory);
+void tia_update(uint8_t *rom);
 
 void tia_cleanup();
 
-void render_elements(uint8_t *memory);
+void render_elements(uint8_t *rom);
 
 void tia_set_pixel(int x, int y, uint32_t color);
 

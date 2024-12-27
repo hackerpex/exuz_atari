@@ -25,6 +25,8 @@ typedef struct {
 } CPU;
 
 
+uint8_t memory[MEMORY_SIZE];
+uint8_t rom[ROM_SIZE];
 
 // Memória
 

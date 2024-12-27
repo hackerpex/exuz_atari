@@ -1,5 +1,6 @@
 #include "input.h"
 
+
 #include <SDL2/SDL.h>
 
 // Variáveis para armazenar o estado dos inputs
@@ -11,7 +12,7 @@ void input_init() {
     swcha = 0xFF; // Reseta os controles
 }
 
-void input_update(bool *is_running) {
+void input_update(bool *is_running, uint8_t *memory) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {

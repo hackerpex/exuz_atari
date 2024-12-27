@@ -71,12 +71,12 @@ void render_random_pixel() {
 }
 
 // Atualiza o TIA (renderiza o framebuffer na tela)
-void tia_update(uint8_t *memory) {
+void tia_update(uint8_t *rom) {
      SDL_UpdateTexture(texture, NULL, framebuffer, SCREEN_WIDTH * sizeof(uint32_t));
     //  SDL_RenderClear(renderer);
     
     SDL_RenderCopy(renderer, texture, NULL, NULL);
-    render_elements(memory);
+    render_elements(rom);
     render_random_pixel();
 
     SDL_RenderPresent(renderer);
@@ -101,10 +101,10 @@ void tia_cleanup() {
 }
 
 
-void render_playfield(uint8_t *memory, int y) {
-    uint8_t pf0 = memory[0x07]; // Primeiro bloco do Playfield
-    uint8_t pf1 = memory[0x08]; // Segundo bloco
-    uint8_t pf2 = memory[0x09]; // Terceiro bloco
+void render_playfield(uint8_t *rom, int y) {
+    uint8_t pf0 = rom[0x07]; // Primeiro bloco do Playfield
+    uint8_t pf1 = rom[0x08]; // Segundo bloco
+    uint8_t pf2 = rom[0x09]; // Terceiro bloco
 
     // Renderiza o PF0 (4 bits visíveis)
     for (int i = 0; i < 4; i++) {
@@ -122,8 +122,8 @@ void render_playfield(uint8_t *memory, int y) {
 }
 
 
-void render_player(uint8_t *memory, int x, int y, int player) {
-    uint8_t sprite = memory[player == 0 ? 0x1B : 0x1C]; // Posição do jogador
+void render_player(uint8_t *rom, int x, int y, int player) {
+    uint8_t sprite = rom[player == 0 ? 0x1B : 0x1C]; // Posição do jogador
     uint32_t color = (player == 0) ? 0xFF0000FF : 0xFFFF0000; // Azul ou vermelho
 
     for (int i = 0; i < 8; i++) {
@@ -134,11 +134,11 @@ void render_player(uint8_t *memory, int x, int y, int player) {
     }
 }
 
-void render_elements(uint8_t *memory) {
+void render_elements(uint8_t *rom) {
     for (int y = 0; y < SCREEN_HEIGHT; y++) {
-            render_playfield(memory, y);              
-            render_player(memory, 50, y, 0);          
-            render_player(memory, 100, y, 1);         
+            render_playfield(rom, y);              
+            render_player(rom, 50, y, 0);          
+            render_player(rom, 100, y, 1);         
         }
 }
 
